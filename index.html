@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COLORMATE</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        studio: {
+                            900: '#0f1117',
+                            800: '#181b24',
+                            700: '#232734',
+                            600: '#2f3546',
+                            accent: '#6366f1',
+                            amber: '#f59e0b'
+                        }
+                    },
+                    aspectRatio: {
+                        '4/3': '4 / 3',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0b0c10;
+            color: #e2e8f0;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            overflow-x: hidden;
+        }
+        .color-wheel-bg {
+            background: conic-gradient(from 0deg, red, yellow, lime, cyan, blue, magenta, red);
+            border-radius: 50%;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #181b24;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #374151;
+            border-radius: 3px;
+        }
+        .wheel-container {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            cursor: pointer;
+            user-select: none;
+            touch-action: none;
+        }
+        .wheel-pointer {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border: 2px solid white;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.6);
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            box-shadow: 0 0 4px rgba(0,0,0,0.8);
+        }
+        .film-overlay-shadows {
+            mix-blend-mode: soft-light;
+            opacity: 0.35;
+        }
+        .film-overlay-midtones {
+            mix-blend-mode: overlay;
+            opacity: 0.20;
+        }
+        .film-overlay-highlights {
+            mix-blend-mode: soft-light;
+            opacity: 0.25;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col bg-studio-900 text-slate-100 relative">
+
+    <!-- FLOATING SIDE NAVIGATION BUTTONS (LEFT & RIGHT) -->
+    <div class="fixed inset-y-0 left-0 right-0 pointer-events-none flex justify-between items-center px-3 sm:px-6 z-50">
+        <!-- Tombol Kembali (Sisi Kiri) -->
+        <button id="floating-prev-btn" onclick="navigateMenu(-1)" 
+            class="pointer-events-auto group flex items-center gap-2 bg-studio-800/90 hover:bg-indigo-600 text-white p-3 sm:px-4 sm:py-3 rounded-full backdrop-blur-md border border-slate-700/80 shadow-2xl transition-all duration-300 hover:scale-110 active:scale-95 focus:outline-none">
+            <i class="fa-solid fa-chevron-left text-sm transition-transform group-hover:-translate-x-1"></i>
+            <span class="hidden sm:inline font-semibold text-xs tracking-wider uppercase pr-1">Kembali</span>
+        </button>
+
+        <!-- Tombol Lanjut (Sisi Kanan) -->
+        <button id="floating-next-btn" onclick="navigateMenu(1)" 
+            class="pointer-events-auto group flex items-center gap-2 bg-studio-800/90 hover:bg-indigo-600 text-white p-3 sm:px-4 sm:py-3 rounded-full backdrop-blur-md border border-slate-700/80 shadow-2xl transition-all duration-300 hover:scale-110 active:scale-95 focus:outline-none">
+            <span class="hidden sm:inline font-semibold text-xs tracking-wider uppercase pl-1">Lanjut</span>
+            <i class="fa-solid fa-chevron-right text-sm transition-transform group-hover:translate-x-1"></i>
+        </button>
+    </div>
+
+    <!-- HEADER NAVBAR -->
+    <header class="sticky top-0 z-40 bg-studio-800/95 backdrop-blur-md border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            
+            <!-- Logo & Title -->
+            <div class="flex items-center gap-3 cursor-pointer" onclick="switchTab('home')">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-amber-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
+                    <i class="fa-solid fa-clapperboard text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="font-black text-base sm:text-lg leading-tight bg-gradient-to-r from-white via-slate-200 to-indigo-400 bg-clip-text text-transparent">
+                        COLORMATE
+                    </h1>
+                    <p class="text-[11px] text-slate-400 hidden sm:block">Warna yang tepat untuk setiap cerita.</p>
+                </div>
+            </div>
+
+            <!-- Desktop Navigation Menu -->
+            <nav class="hidden md:flex items-center gap-1 bg-studio-900/80 p-1.5 rounded-xl border border-slate-800">
+                <button onclick="switchTab('home')" id="tab-btn-home" class="nav-tab px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 bg-indigo-600 text-white shadow-md">
+                    <i class="fa-solid fa-house mr-1.5"></i>Beranda
+                </button>
+                <button onclick="switchTab('demo')" id="tab-btn-demo" class="nav-tab px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 text-slate-400 hover:text-white hover:bg-studio-700">
+                    <i class="fa-solid fa-film mr-1.5"></i>Demo Genre
+                </button>
+                <button onclick="switchTab('grading')" id="tab-btn-grading" class="nav-tab px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 text-slate-400 hover:text-white hover:bg-studio-700">
+                    <i class="fa-solid fa-sliders mr-1.5"></i>Grading Suite
+                </button>
+                <button onclick="switchTab('palettes')" id="tab-btn-palettes" class="nav-tab px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 text-slate-400 hover:text-white hover:bg-studio-700">
+                    <i class="fa-solid fa-palette mr-1.5"></i>Color Presets
+                </button>
+                <button onclick="switchTab('guide')" id="tab-btn-guide" class="nav-tab px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 text-slate-400 hover:text-white hover:bg-studio-700">
+                    <i class="fa-solid fa-book-open mr-1.5"></i>Premiere Guide
+                </button>
+            </nav>
+
+            <!-- Status Indicator -->
+            <div class="flex items-center gap-2">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    Lumetri Color
+                </span>
+            </div>
+        </div>
+        
+        <!-- Mobile Navigation Menu Bar -->
+        <div class="md:hidden flex border-t border-slate-800 bg-studio-900 px-2 py-2 gap-1 overflow-x-auto custom-scrollbar">
+            <button onclick="switchTab('home')" id="mobile-tab-home" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-indigo-600 text-white whitespace-nowrap">
+                <i class="fa-solid fa-house mr-1"></i>Beranda
+            </button>
+            <button onclick="switchTab('demo')" id="mobile-tab-demo" class="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 bg-studio-800 whitespace-nowrap">
+                <i class="fa-solid fa-film mr-1"></i>Demo Genre
+            </button>
+            <button onclick="switchTab('grading')" id="mobile-tab-grading" class="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 bg-studio-800 whitespace-nowrap">
+                <i class="fa-solid fa-sliders mr-1"></i>Grading Suite
+            </button>
+            <button onclick="switchTab('palettes')" id="mobile-tab-palettes" class="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 bg-studio-800 whitespace-nowrap">
+                <i class="fa-solid fa-palette mr-1"></i>Presets
+            </button>
+            <button onclick="switchTab('guide')" id="mobile-tab-guide" class="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 bg-studio-800 whitespace-nowrap">
+                <i class="fa-solid fa-book-open mr-1"></i>Guide
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+        
+        <!-- TAB 0: HOME / TAMPILAN AWAL -->
+        <section id="view-home" class="space-y-10 pb-6">
+            
+            <!-- Hero Banner -->
+            <div class="text-center max-w-4xl mx-auto pt-6 pb-4 space-y-4">
+                <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-semibold uppercase tracking-wider">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Asisten Digital Colorist Video Editing
+                </div>
+                
+                <h1 class="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-tight flex flex-col items-center gap-1 sm:gap-2">
+                    <span>COLORMATE</span>
+                    <span class="text-xl sm:text-3xl lg:text-4xl font-extrabold tracking-normal bg-gradient-to-r from-indigo-400 via-purple-400 to-amber-400 bg-clip-text text-transparent">
+                        Color Mastery for Creative Students
+                    </span>
+                </h1>
+                
+                <p class="text-base sm:text-xl text-slate-300 font-medium italic">
+                    “warna bukan hanya estetika, tetapi menjadi bagian dari cara sebuah cerita disampaikan”
+                </p>
+
+                <p class="text-xs sm:text-sm text-slate-400 max-w-2xl mx-auto leading-relaxed">
+                    Platform panduan color grading interaktif untuk pemula hingga menengah. Pilih karakter warna video, atur parameter Lumetri Color dengan <strong>Color Wheels 3-Way</strong>, dan salin langsung ke <strong>Adobe Premiere Pro</strong>.
+                </p>
+
+                <div class="pt-4 flex flex-wrap items-center justify-center gap-4">
+                    <button onclick="switchTab('grading')" class="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/25 transition-all transform hover:-translate-y-0.5 flex items-center gap-2 text-xs sm:text-sm">
+                        <i class="fa-solid fa-sliders text-base"></i> Buka Studio Grading Suite
+                    </button>
+                    <button onclick="switchTab('demo')" class="px-6 py-3 bg-studio-800 hover:bg-studio-700 text-slate-200 font-semibold rounded-xl border border-slate-700 transition-all flex items-center gap-2 text-xs sm:text-sm">
+                        <i class="fa-solid fa-play text-indigo-400"></i> Lihat Demo 3 Genre
+                    </button>
+                </div>
+            </div>
+
+            <!-- Features Cards Grid -->
+            <div>
+                <div class="flex items-center justify-between mb-4 border-b border-slate-800 pb-2">
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">Pilihan Navigasi Modul</h2>
+                    <span class="text-xs text-indigo-400 font-semibold">5 Fitur Utama</span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+                    <!-- Card 1 -->
+                    <div onclick="switchTab('demo')" class="group bg-studio-800 rounded-2xl p-6 border border-slate-800 hover:border-indigo-500/50 hover:bg-studio-800/80 transition-all duration-300 cursor-pointer shadow-lg flex flex-col justify-between">
+                        <div class="space-y-3">
+                            <div class="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center text-xl font-bold group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-film"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-white group-hover:text-indigo-300 transition-colors">
+                                1. Demo 3 Genre Video
+                            </h3>
+                            <p class="text-xs text-slate-400 leading-relaxed">
+                                Tinjau video contoh untuk 3 kategori utama: <strong>Fun/Vibrant</strong>, <strong>Cinematic Drama</strong>, dan <strong>Horror/Dark</strong>
+                            </p>
+                        </div>
+                        <div class="mt-6 flex items-center text-xs font-semibold text-indigo-400 group-hover:translate-x-1 transition-transform">
+                            Eksplorasi Video Demo <i class="fa-solid fa-arrow-right ml-2"></i>
+                        </div>
+                    </div>
+
+                    <!-- Card 2 -->
+                    <div onclick="switchTab('grading')" class="group bg-studio-800 rounded-2xl p-6 border border-slate-800 hover:border-indigo-500/50 hover:bg-studio-800/80 transition-all duration-300 cursor-pointer shadow-lg flex flex-col justify-between">
+                        <div class="space-y-3">
+                            <div class="w-12 h-12 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center text-xl font-bold group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-sliders"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-white group-hover:text-indigo-300 transition-colors">
+                                2. Studio Grading Suite
+                            </h3>
+                            <p class="text-xs text-slate-400 leading-relaxed">
+                                Kontrol Lumetri interaktif dengan <strong>3-Way Color Wheels</strong> (Shadows, Midtones, Highlights) yang dapat di-drag, slider Exposure, Contrast, & Saturation.
+                            </p>
+                        </div>
+                        <div class="mt-6 flex items-center text-xs font-semibold text-indigo-400 group-hover:translate-x-1 transition-transform">
+                            Masuk ke Studio <i class="fa-solid fa-arrow-right ml-2"></i>
+                        </div>
+                    </div>
+
+                    <!-- Card 3 -->
+                    <div onclick="switchTab('palettes')" class="group bg-studio-800 rounded-2xl p-6 border border-slate-800 hover:border-indigo-500/50 hover:bg-studio-800/80 transition-all duration-300 cursor-pointer shadow-lg flex flex-col justify-between">
+                        <div class="space-y-3">
+                            <div class="w-12 h-12 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center text-xl font-bold group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-palette"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-white group-hover:text-indigo-300 transition-colors">
+                                3. Color Presets & Templates
+                            </h3>
+                            <p class="text-xs text-slate-400 leading-relaxed">
+                                Template preset siap pakai (Fun Vlog, Cinematic Warm Teal, Dark Horror) lengkap dengan palet warna dan parameter grading.
+                            </p>
+                        </div>
+                        <div class="mt-6 flex items-center text-xs font-semibold text-indigo-400 group-hover:translate-x-1 transition-transform">
+                            Katalog Preset <i class="fa-solid fa-arrow-right ml-2"></i>
+                        </div>
+                    </div>
+
+                    <!-- Card 4 -->
+                    <div onclick="switchTab('guide')" class="group bg-studio-800 rounded-2xl p-6 border border-slate-800 hover:border-indigo-500/50 hover:bg-studio-800/80 transition-all duration-300 cursor-pointer shadow-lg flex flex-col justify-between">
+                        <div class="space-y-3">
+                            <div class="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-xl font-bold group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-book-open"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-white group-hover:text-indigo-300 transition-colors">
+                                4. Panduan Premiere Pro
+                            </h3>
+                            <p class="text-xs text-slate-400 leading-relaxed">
+                                Panduan penerapan Lumetri Color, pengecekan skin tone, hingga ekspor video di Adobe Premiere Pro.
+                            </p>
+                        </div>
+                        <div class="mt-6 flex items-center text-xs font-semibold text-indigo-400 group-hover:translate-x-1 transition-transform">
+                            Pelajari Panduan <i class="fa-solid fa-arrow-right ml-2"></i>
+                        </div>
+                    </div>
+
+                    <!-- Card 5 -->
+                    <div onclick="switchTab('grading'); applyPresetToGradingSuite('cinematic');" class="group bg-studio-800 rounded-2xl p-6 border border-slate-800 hover:border-indigo-500/50 hover:bg-studio-800/80 transition-all duration-300 cursor-pointer shadow-lg flex flex-col justify-between md:col-span-2 lg:col-span-2">
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <div class="w-12 h-12 rounded-xl bg-rose-500/10 text-rose-400 flex items-center justify-center text-xl font-bold group-hover:scale-110 transition-transform">
+                                    <i class="fa-solid fa-copy"></i>
+                                </div>
+                                <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                                    Quick Export
+                                </span>
+                            </div>
+                            <h3 class="text-lg font-bold text-white group-hover:text-indigo-300 transition-colors">
+                                5. Salin Parameter ke Adobe Premiere Pro
+                            </h3>
+                            <p class="text-xs text-slate-400 leading-relaxed">
+                                Pilih preset favorit Anda, atur piringan warna (color wheels), lalu tekan tombol <strong>"Salin Parameter Lumetri Pro"</strong> untuk diinput langsung pada panel Lumetri Color Adobe Premiere Pro.
+                            </p>
+                        </div>
+                        <div class="mt-6 flex items-center text-xs font-semibold text-indigo-400 group-hover:translate-x-1 transition-transform">
+                            Mulai Sekarang <i class="fa-solid fa-arrow-right ml-2"></i>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Workflow Summary -->
+            <div class="bg-studio-800 p-6 rounded-2xl border border-slate-800 space-y-4">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                    <i class="fa-solid fa-diagram-project text-indigo-400"></i> Alur Kerja Sistem (Colorist Workflow)
+                </h3>
+                
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                    <div class="p-4 rounded-xl bg-studio-900 border border-slate-800">
+                        <span class="text-xs font-bold text-indigo-400 block mb-1">STEP 01</span>
+                        <h4 class="text-xs font-bold text-white">Pilih Genre Video</h4>
+                        <p class="text-[11px] text-slate-400 mt-1">Fun, Cinematic, atau Horror</p>
+                    </div>
+                    <div class="p-4 rounded-xl bg-studio-900 border border-slate-800">
+                        <span class="text-xs font-bold text-indigo-400 block mb-1">STEP 02</span>
+                        <h4 class="text-xs font-bold text-white">Atur Color Wheels</h4>
+                        <p class="text-[11px] text-slate-400 mt-1">Shadows, Midtones, Highlights</p>
+                    </div>
+                    <div class="p-4 rounded-xl bg-studio-900 border border-slate-800">
+                        <span class="text-xs font-bold text-indigo-400 block mb-1">STEP 03</span>
+                        <h4 class="text-xs font-bold text-white">Pratinjau Real-time</h4>
+                        <p class="text-[11px] text-slate-400 mt-1">Suhu, kontras, & saturasi</p>
+                    </div>
+                    <div class="p-4 rounded-xl bg-studio-900 border border-slate-800">
+                        <span class="text-xs font-bold text-indigo-400 block mb-1">STEP 04</span>
+                        <h4 class="text-xs font-bold text-white">Salin ke Premiere Pro</h4>
+                        <p class="text-[11px] text-slate-400 mt-1">Terapkan pada Lumetri Color</p>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- TAB 1: DEMO GENRE SECTION -->
+        <section id="view-demo" class="hidden space-y-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-studio-800 p-6 rounded-2xl border border-slate-800">
+                <div>
+                    <h2 class="text-2xl font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-play-circle text-indigo-400"></i> Demonstrasi 3 Genre Video
+                    </h2>
+                    <p class="text-slate-400 text-sm mt-1">
+                        Eksplorasi contoh video untuk 3 genre utama dengan format player rasio 4:3 landscape.
+                    </p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+                <!-- GENRE 1: FUN VIDEO -->
+                <div class="bg-studio-800 rounded-2xl border border-slate-800 overflow-hidden flex flex-col justify-between">
+                    <div class="p-4 border-b border-slate-800 flex items-center justify-between bg-studio-800/80">
+                        <div class="flex items-center gap-2">
+                            <span class="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xs">01</span>
+                            <div>
+                                <h3 class="font-semibold text-white text-sm">Fun / Vibrant</h3>
+                            </div>
+                        </div>
+                        <span class="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase bg-amber-500/10 text-amber-400 border border-amber-500/30">
+                            Vibrant
+                        </span>
+                    </div>
+
+                    <div class="relative w-full aspect-[4/3] bg-black overflow-hidden">
+                        <iframe 
+                            src="https://drive.google.com/file/d/1-F1PGG_963cdjdNJ6wUUbfKERO9dpaCX/preview" 
+                            class="w-full h-full border-0" 
+                            allow="autoplay; encrypted-media" 
+                            allowfullscreen>
+                        </iframe>
+                    </div>
+
+                    <div class="p-4 space-y-4">
+                        <p class="text-xs text-slate-400 leading-relaxed text-justify">
+                            Color grading video fun menggunakan tampilan warna yang cerah, vibrant, fresh, dan energik untuk menciptakan suasana ceria dan menyenangkan. Exposure dibuat cukup terang, contrast sedang, saturation dan vibrance ditingkatkan secara terkontrol, dengan warna warm seperti kuning dan oranye untuk kesan positif serta skin tone tetap natural.
+                        </p>
+
+                        <button onclick="applyPresetToGradingSuite('fun'); switchTab('grading')" class="w-full py-2 bg-studio-700 hover:bg-indigo-600 text-white rounded-xl text-xs font-semibold transition-colors flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Gunakan Preset Fun
+                        </button>
+                    </div>
+                </div>
+
+                <!-- GENRE 2: CINEMATIC DRAMA -->
+                <div class="bg-studio-800 rounded-2xl border border-slate-800 overflow-hidden flex flex-col justify-between">
+                    <div class="p-4 border-b border-slate-800 flex items-center justify-between bg-studio-800/80">
+                        <div class="flex items-center gap-2">
+                            <span class="w-7 h-7 rounded-lg bg-teal-500/20 text-teal-400 flex items-center justify-center font-bold text-xs">02</span>
+                            <div>
+                                <h3 class="font-semibold text-white text-sm">Cinematic Drama</h3>
+                            </div>
+                        </div>
+                        <span class="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase bg-teal-500/10 text-teal-400 border border-teal-500/30">
+                            Teal & Orange
+                        </span>
+                    </div>
+
+                    <div class="relative w-full aspect-[4/3] bg-black overflow-hidden">
+                        <iframe 
+                            src="https://drive.google.com/file/d/1dz03mMZ4BzdOD9-cLK9q0yE_UbdniTv5/preview" 
+                            class="w-full h-full border-0" 
+                            allow="autoplay; encrypted-media" 
+                            allowfullscreen>
+                        </iframe>
+                    </div>
+
+                    <div class="p-4 space-y-4">
+                        <p class="text-xs text-slate-400 leading-relaxed text-justify">
+                            Color grading video cinematic menggunakan warna yang lebih dramatis, seimbang, dan filmis untuk membangun suasana yang kuat. Contrast dibuat lebih tegas, highlights dikontrol, shadows lebih dalam, saturation cenderung terkontrol, serta kombinasi warna warm pada highlights dan cool pada shadows dapat digunakan untuk menciptakan depth dan nuansa sinematik.
+                        </p>
+
+                        <button onclick="applyPresetToGradingSuite('cinematic'); switchTab('grading')" class="w-full py-2 bg-studio-700 hover:bg-indigo-600 text-white rounded-xl text-xs font-semibold transition-colors flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Gunakan Preset Cinematic
+                        </button>
+                    </div>
+                </div>
+
+                <!-- GENRE 3: HORROR / DARK -->
+                <div class="bg-studio-800 rounded-2xl border border-slate-800 overflow-hidden flex flex-col justify-between">
+                    <div class="p-4 border-b border-slate-800 flex items-center justify-between bg-studio-800/80">
+                        <div class="flex items-center gap-2">
+                            <span class="w-7 h-7 rounded-lg bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold text-xs">03</span>
+                            <div>
+                                <h3 class="font-semibold text-white text-sm">Horror / Dark</h3>
+                            </div>
+                        </div>
+                        <span class="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase bg-rose-500/10 text-rose-400 border border-rose-500/30">
+                            Cold & Dark
+                        </span>
+                    </div>
+
+                    <div class="relative w-full aspect-[4/3] bg-black overflow-hidden">
+                        <iframe 
+                            src="https://drive.google.com/file/d/1h4UjDM_2bM45whUxgOGvSWUlz68DhFd8/preview" 
+                            class="w-full h-full border-0" 
+                            allow="autoplay; encrypted-media" 
+                            allowfullscreen>
+                        </iframe>
+                    </div>
+
+                    <div class="p-4 space-y-4">
+                        <p class="text-xs text-slate-400 leading-relaxed text-justify">
+                            Color grading video horor menggunakan warna gelap, dingin, dan desaturated untuk menciptakan suasana tegang, misterius, dan mencekam. Contrast dan blacks diperkuat, highlights dikurangi, saturation diturunkan, serta warna cool seperti biru, cyan, atau hijau dapat digunakan untuk memperkuat kesan gelap dan menyeramkan.
+                        </p>
+
+                        <button onclick="applyPresetToGradingSuite('horror'); switchTab('grading')" class="w-full py-2 bg-studio-700 hover:bg-indigo-600 text-white rounded-xl text-xs font-semibold transition-colors flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Gunakan Preset Horror
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- TAB 2: STUDIO COLOR GRADING SUITE -->
+        <section id="view-grading" class="hidden space-y-6">
+            <div class="bg-studio-800 p-6 rounded-2xl border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-sliders text-indigo-400"></i> Studio Color Grading Suite
+                    </h2>
+                    <p class="text-slate-400 text-sm mt-1">Kontrol Lumetri Color (Basic Correction & Color Wheels 3-Way).</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="copyPremiereSettings()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5">
+                        <i class="fa-solid fa-copy"></i> Salin Nilai Premiere Pro
+                    </button>
+                    <button onclick="resetGradingControls()" class="px-4 py-2 bg-studio-700 hover:bg-rose-600/80 text-slate-200 hover:text-white rounded-xl text-xs font-semibold transition-colors">
+                        <i class="fa-solid fa-rotate-left mr-1.5"></i> Reset All
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Preview Canvas Box -->
+                <div class="lg:col-span-7 bg-studio-800 p-4 rounded-2xl border border-slate-800 space-y-4 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Interactive Canvas Preview</span>
+                            <span id="active-preset-tag" class="px-2.5 py-0.5 rounded text-[11px] font-semibold bg-indigo-500/20 text-indigo-300">Default Grade</span>
+                        </div>
+
+                        <!-- 4:3 Video Container -->
+                        <div class="relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-black border border-slate-700 shadow-2xl flex items-center justify-center">
+                            <div id="preview-box" class="w-full h-full relative transition-all duration-150 flex items-center justify-center">
+                                <iframe id="preview-iframe" src="https://drive.google.com/file/d/1-F1PGG_963cdjdNJ6wUUbfKERO9dpaCX/preview" title="Grading Video Preview" class="w-full h-full border-0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+                                
+                                <!-- Professional Film Tint Overlays -->
+                                <div id="preview-overlay-shadows" class="absolute inset-0 pointer-events-none transition-all duration-300 film-overlay-shadows"></div>
+                                <div id="preview-overlay-midtones" class="absolute inset-0 pointer-events-none transition-all duration-300 film-overlay-midtones"></div>
+                                <div id="preview-overlay-highlights" class="absolute inset-0 pointer-events-none transition-all duration-300 film-overlay-highlights"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Preset Selector Bar -->
+                    <div class="flex items-center gap-2 overflow-x-auto pb-1 pt-2 custom-scrollbar">
+                        <span class="text-xs text-slate-400 whitespace-nowrap">Pilih Preset:</span>
+                        <button onclick="applyPresetToGradingSuite('fun')" class="px-3 py-1.5 rounded-lg text-xs bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 border border-amber-500/30 whitespace-nowrap">Fun & Bright</button>
+                        <button onclick="applyPresetToGradingSuite('cinematic')" class="px-3 py-1.5 rounded-lg text-xs bg-teal-500/10 text-teal-300 hover:bg-teal-500/20 border border-teal-500/30 whitespace-nowrap">Teal & Orange</button>
+                        <button onclick="applyPresetToGradingSuite('horror')" class="px-3 py-1.5 rounded-lg text-xs bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 border border-rose-500/30 whitespace-nowrap">Dark Horror</button>
+                    </div>
+                </div>
+
+                <!-- Sliders & Wheels Control Panel -->
+                <div class="lg:col-span-5 bg-studio-800 p-5 rounded-2xl border border-slate-800 space-y-6 custom-scrollbar max-h-[620px] overflow-y-auto">
+                    
+                    <!-- COLOR WHEELS SECTION -->
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between border-b border-slate-700 pb-2">
+                            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                                <i class="fa-solid fa-circle-notch text-indigo-400"></i> Lumetri Color Wheels (3-Way)
+                            </h3>
+                            <span class="text-[10px] text-slate-400">Geser titik / Klik 2x reset</span>
+                        </div>
+
+                        <!-- 3 Color Wheels -->
+                        <div class="grid grid-cols-3 gap-3 bg-studio-900/60 p-3 rounded-xl border border-slate-800 text-center">
+                            
+                            <!-- SHADOWS -->
+                            <div class="flex flex-col items-center space-y-2">
+                                <span class="text-[11px] font-semibold text-slate-300">Shadows</span>
+                                <div class="wheel-container color-wheel-bg border-2 border-slate-700 flex items-center justify-center relative shadow-inner" id="wheel-shadows-bg" data-wheel="shadows">
+                                    <div class="wheel-pointer" id="pointer-shadows" style="left: 50%; top: 50%;"></div>
+                                </div>
+                                <div class="text-[10px] font-mono text-slate-400 flex items-center justify-center gap-1">
+                                    <span id="label-shadows-color" class="w-3 h-3 rounded-full border border-slate-600 inline-block bg-slate-800"></span>
+                                    <span id="val-shadows-tint">Netral</span>
+                                </div>
+                            </div>
+
+                            <!-- MIDTONES -->
+                            <div class="flex flex-col items-center space-y-2">
+                                <span class="text-[11px] font-semibold text-slate-300">Midtones</span>
+                                <div class="wheel-container color-wheel-bg border-2 border-slate-700 flex items-center justify-center relative shadow-inner" id="wheel-midtones-bg" data-wheel="midtones">
+                                    <div class="wheel-pointer" id="pointer-midtones" style="left: 50%; top: 50%;"></div>
+                                </div>
+                                <div class="text-[10px] font-mono text-slate-400 flex items-center justify-center gap-1">
+                                    <span id="label-midtones-color" class="w-3 h-3 rounded-full border border-slate-600 inline-block bg-slate-800"></span>
+                                    <span id="val-midtones-tint">Netral</span>
+                                </div>
+                            </div>
+
+                            <!-- HIGHLIGHTS -->
+                            <div class="flex flex-col items-center space-y-2">
+                                <span class="text-[11px] font-semibold text-slate-300">Highlights</span>
+                                <div class="wheel-container color-wheel-bg border-2 border-slate-700 flex items-center justify-center relative shadow-inner" id="wheel-highlights-bg" data-wheel="highlights">
+                                    <div class="wheel-pointer" id="pointer-highlights" style="left: 50%; top: 50%;"></div>
+                                </div>
+                                <div class="text-[10px] font-mono text-slate-400 flex items-center justify-center gap-1">
+                                    <span id="label-highlights-color" class="w-3 h-3 rounded-full border border-slate-600 inline-block bg-slate-800"></span>
+                                    <span id="val-highlights-tint">Netral</span>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- BASIC CORRECTION SLIDERS -->
+                    <div class="space-y-4">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300 border-b border-slate-700 pb-2">
+                            Basic Correction
+                        </h3>
+
+                        <!-- Brightness -->
+                        <div>
+                            <div class="flex justify-between text-xs text-slate-300 mb-1">
+                                <span>Exposure / Kecerahan</span>
+                                <span id="val-brightness" class="font-mono text-indigo-400">100%</span>
+                            </div>
+                            <input type="range" id="slider-brightness" min="40" max="150" value="100" oninput="updateGrading()" class="w-full accent-indigo-500 bg-studio-700 rounded h-2 cursor-pointer">
+                        </div>
+
+                        <!-- Contrast -->
+                        <div>
+                            <div class="flex justify-between text-xs text-slate-300 mb-1">
+                                <span>Kontras (Contrast)</span>
+                                <span id="val-contrast" class="font-mono text-indigo-400">100%</span>
+                            </div>
+                            <input type="range" id="slider-contrast" min="50" max="180" value="100" oninput="updateGrading()" class="w-full accent-indigo-500 bg-studio-700 rounded h-2 cursor-pointer">
+                        </div>
+
+                        <!-- Saturation -->
+                        <div>
+                            <div class="flex justify-between text-xs text-slate-300 mb-1">
+                                <span>Saturasi Warna (Saturation)</span>
+                                <span id="val-saturate" class="font-mono text-indigo-400">100%</span>
+                            </div>
+                            <input type="range" id="slider-saturate" min="0" max="220" value="100" oninput="updateGrading()" class="w-full accent-indigo-500 bg-studio-700 rounded h-2 cursor-pointer">
+                        </div>
+
+                        <!-- Temperature -->
+                        <div>
+                            <div class="flex justify-between text-xs text-slate-300 mb-1">
+                                <span>Suhu Warna (Temperature)</span>
+                                <span id="val-temp" class="font-mono text-amber-400">0</span>
+                            </div>
+                            <input type="range" id="slider-temp" min="-50" max="50" value="0" oninput="updateGrading()" class="w-full accent-amber-500 bg-studio-700 rounded h-2 cursor-pointer">
+                        </div>
+
+                        <!-- Hue Shift -->
+                        <div>
+                            <div class="flex justify-between text-xs text-slate-300 mb-1">
+                                <span>Hue Shift</span>
+                                <span id="val-hue" class="font-mono text-indigo-400">0°</span>
+                            </div>
+                            <input type="range" id="slider-hue" min="-180" max="180" value="0" oninput="updateGrading()" class="w-full accent-indigo-500 bg-studio-700 rounded h-2 cursor-pointer">
+                        </div>
+
+                        <!-- Sepia/Tint -->
+                        <div>
+                            <div class="flex justify-between text-xs text-slate-300 mb-1">
+                                <span>Tone Tint (Sepia / Cool)</span>
+                                <span id="val-sepia" class="font-mono text-indigo-400">0%</span>
+                            </div>
+                            <input type="range" id="slider-sepia" min="0" max="100" value="0" oninput="updateGrading()" class="w-full accent-indigo-500 bg-studio-700 rounded h-2 cursor-pointer">
+                        </div>
+                    </div>
+
+                    <button onclick="copyPremiereSettings()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold transition-colors flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-copy"></i> Salin Parameter Lumetri Pro
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: COLOR PRESETS LIBRARY -->
+        <section id="view-palettes" class="hidden space-y-6">
+            <div class="bg-studio-800 p-6 rounded-2xl border border-slate-800">
+                <h2 class="text-2xl font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-palette text-indigo-400"></i> Perpustakaan Preset Color Grading
+                </h2>
+                <p class="text-slate-400 text-sm mt-1">Pilih preset instan untuk langsung diterapkan pada video Anda.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Preset Card 1 -->
+                <div class="bg-studio-800 rounded-2xl p-5 border border-slate-800 space-y-4 flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-white text-base">Fun & Sunny Vlog</h3>
+                            <span class="w-3 h-3 rounded-full bg-amber-400"></span>
+                        </div>
+                        <p class="text-xs text-slate-400 mb-3">Outdoor, travel vlog, & suasana ceria</p>
+                        <div class="h-16 rounded-xl bg-gradient-to-r from-amber-400 via-sky-400 to-rose-400 p-3 flex items-end justify-between shadow-inner">
+                            <span class="text-[10px] font-bold text-slate-900 bg-white/80 px-2 py-0.5 rounded">High Vibrancy</span>
+                        </div>
+                    </div>
+                    <button onclick="applyPresetToGradingSuite('fun'); switchTab('grading')" class="w-full py-2 bg-studio-700 hover:bg-indigo-600 text-white rounded-xl text-xs font-semibold transition-colors">
+                        Terapkan di Suite
+                    </button>
+                </div>
+
+                <!-- Preset Card 2 -->
+                <div class="bg-studio-800 rounded-2xl p-5 border border-slate-800 space-y-4 flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-white text-base">Cinematic Teal & Orange</h3>
+                            <span class="w-3 h-3 rounded-full bg-teal-400"></span>
+                        </div>
+                        <p class="text-xs text-slate-400 mb-3">Film drama & sinematik bioskop modern</p>
+                        <div class="h-16 rounded-xl bg-gradient-to-r from-teal-700 via-slate-800 to-orange-500 p-3 flex items-end justify-between shadow-inner">
+                            <span class="text-[10px] font-bold text-white bg-black/60 px-2 py-0.5 rounded">Teal and orange</span>
+                        </div>
+                    </div>
+                    <button onclick="applyPresetToGradingSuite('cinematic'); switchTab('grading')" class="w-full py-2 bg-studio-700 hover:bg-indigo-600 text-white rounded-xl text-xs font-semibold transition-colors">
+                        Terapkan di Suite
+                    </button>
+                </div>
+
+                <!-- Preset Card 3 -->
+                <div class="bg-studio-800 rounded-2xl p-5 border border-slate-800 space-y-4 flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-white text-base">Dark Horror / Suspense</h3>
+                            <span class="w-3 h-3 rounded-full bg-rose-500"></span>
+                        </div>
+                        <p class="text-xs text-slate-400 mb-3">Suasana tegang, gelap, & mencekam</p>
+                        <div class="h-16 rounded-xl bg-gradient-to-r from-cyan-950 via-slate-900 to-emerald-950 p-3 flex items-end justify-between shadow-inner">
+                            <span class="text-[10px] font-bold text-white bg-black/70 px-2 py-0.5 rounded">Cold & Dark</span>
+                        </div>
+                    </div>
+                    <button onclick="applyPresetToGradingSuite('horror'); switchTab('grading')" class="w-full py-2 bg-studio-700 hover:bg-indigo-600 text-white rounded-xl text-xs font-semibold transition-colors">
+                        Terapkan di Suite
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: PREMIERE PRO GUIDE -->
+        <section id="view-guide" class="hidden space-y-6">
+            <div class="bg-studio-800 p-6 rounded-2xl border border-slate-800">
+                <h2 class="text-2xl font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-book-open text-indigo-400"></i> Panduan Adobe Premiere Pro
+                </h2>
+                <p class="text-slate-400 text-sm mt-1">Langkah demi langkah menerapkan Lumetri Color di Premiere Pro.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-studio-800 p-6 rounded-2xl border border-slate-800 space-y-4">
+                    <h3 class="text-base font-bold text-indigo-400 flex items-center gap-2">
+                        <span class="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs">1</span>
+                        Cara Memasukkan Nilai
+                    </h3>
+                    <ol class="text-xs text-slate-300 space-y-3 list-decimal list-inside leading-relaxed">
+                        <li>Buka software <strong class="text-white">Adobe Premiere Pro</strong> & pilih klip di Timeline.</li>
+                        <li>Buka panel <strong class="text-white">Lumetri Color</strong> (Window &gt; Lumetri Color).</li>
+                        <li>Atur nilai pada tab <strong class="text-white">Basic Correction</strong> sesuai slider.</li>
+                        <li>Geser piringan warna pada tab <strong class="text-white">Color Wheels & Match</strong>.</li>
+                        <li>Periksa skin tone menggunakan <strong class="text-white">Vectorscope YUV</strong>.</li>
+                    </ol>
+                </div>
+
+                <div class="bg-studio-800 p-6 rounded-2xl border border-slate-800 space-y-4">
+                    <h3 class="text-base font-bold text-amber-400 flex items-center gap-2">
+                        <span class="w-6 h-6 rounded-full bg-amber-600 text-white flex items-center justify-center text-xs">2</span>
+                        Tips Skin Tone Natural
+                    </h3>
+                    <ul class="text-xs text-slate-300 space-y-2 leading-relaxed">
+                        <li>• <strong class="text-white">Pentingkan Skin Tone:</strong> Jangan sampai wajah karakter terlihat terlalu hijau/cyan saat grading horror.</li>
+                        <li>• <strong class="text-white">Gunakan HSL Secondary:</strong> Apabila ingin merubah latar tanpa mempengaruhi kulit wajah.</li>
+                    </ul>
+                    <div class="pt-4 border-t border-slate-700">
+                        <button onclick="switchTab('grading')" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold transition-colors flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-sliders"></i> Buka Studio Grading Suite
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Notification Toast -->
+        <div id="toast" class="fixed bottom-6 right-6 bg-indigo-600 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none z-50">
+            <i class="fa-solid fa-circle-check text-lg"></i>
+            <span id="toast-message" class="text-xs font-semibold">Pesan Notifikasi</span>
+        </div>
+
+    </main>
+
+    <script>
+        // State Tab Navigasi
+        const tabList = ['home', 'demo', 'grading', 'palettes', 'guide'];
+        let currentTab = 'home';
+
+        // State Color Wheels
+        let activeWheelKey = null;
+        const wheelsState = {
+            shadows: { x: 0, y: 0, tint: 'Netral', color: 'transparent' },
+            midtones: { x: 0, y: 0, tint: 'Netral', color: 'transparent' },
+            highlights: { x: 0, y: 0, tint: 'Netral', color: 'transparent' }
+        };
+
+        // Fungsi Beralih Tab
+        function switchTab(tabName) {
+            if (!tabList.includes(tabName)) return;
+            currentTab = tabName;
+
+            tabList.forEach(t => {
+                const view = document.getElementById(`view-${t}`);
+                if (view) view.classList.add('hidden');
+
+                // Update desktop nav
+                const btn = document.getElementById(`tab-btn-${t}`);
+                if (btn) {
+                    if (t === tabName) {
+                        btn.className = "nav-tab px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 bg-indigo-600 text-white shadow-md";
+                    } else {
+                        btn.className = "nav-tab px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 text-slate-400 hover:text-white hover:bg-studio-700";
+                    }
+                }
+
+                // Update mobile nav
+                const mBtn = document.getElementById(`mobile-tab-${t}`);
+                if (mBtn) {
+                    if (t === tabName) {
+                        mBtn.className = "px-3 py-1.5 rounded-lg text-xs font-medium bg-indigo-600 text-white whitespace-nowrap";
+                    } else {
+                        mBtn.className = "px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 bg-studio-800 whitespace-nowrap";
+                    }
+                }
+            });
+
+            const activeView = document.getElementById(`view-${tabName}`);
+            if (activeView) activeView.classList.remove('hidden');
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Navigasi Tombol Melayang Samping (-1 Kembali, 1 Lanjut)
+        function navigateMenu(direction) {
+            let currentIndex = tabList.indexOf(currentTab);
+            let nextIndex = (currentIndex + direction + tabList.length) % tabList.length;
+            switchTab(tabList[nextIndex]);
+        }
+
+        // Live Update Grading Canvas Filter
+        function updateGrading() {
+            const bright = document.getElementById('slider-brightness').value;
+            const contrast = document.getElementById('slider-contrast').value;
+            const saturate = document.getElementById('slider-saturate').value;
+            const temp = document.getElementById('slider-temp').value;
+            const hue = document.getElementById('slider-hue').value;
+            const sepia = document.getElementById('slider-sepia').value;
+
+            // Display Values
+            document.getElementById('val-brightness').innerText = `${bright}%`;
+            document.getElementById('val-contrast').innerText = `${contrast}%`;
+            document.getElementById('val-saturate').innerText = `${saturate}%`;
+            document.getElementById('val-temp').innerText = `${temp > 0 ? '+' : ''}${temp}`;
+            document.getElementById('val-hue').innerText = `${hue}°`;
+            document.getElementById('val-sepia').innerText = `${sepia}%`;
+
+            // Clean Film Standard Filter (Strictly keeping Skintones Natural)
+            const filterStr = `brightness(${bright}%) contrast(${contrast}%) saturate(${saturate}%) hue-rotate(${hue}deg) sepia(${sepia}%)`;
+            const box = document.getElementById('preview-box');
+            if (box) box.style.filter = filterStr;
+        }
+
+        // Terapkan Preset Standar Perfilman Ke Studio Suite
+        function applyPresetToGradingSuite(presetName) {
+            const iframe = document.getElementById('preview-iframe');
+            const tag = document.getElementById('active-preset-tag');
+
+            if (presetName === 'fun') {
+                if (iframe) iframe.src = "https://drive.google.com/file/d/1-F1PGG_963cdjdNJ6wUUbfKERO9dpaCX/preview";
+                document.getElementById('slider-brightness').value = 105;
+                document.getElementById('slider-contrast').value = 112;
+                document.getElementById('slider-saturate').value = 115;
+                document.getElementById('slider-temp').value = 4;
+                document.getElementById('slider-hue').value = 0;
+                document.getElementById('slider-sepia').value = 0;
+                if (tag) {
+                    tag.innerText = "Fun & Commercial Vibrant";
+                    tag.className = "px-2.5 py-0.5 rounded text-[11px] font-semibold bg-amber-500/20 text-amber-300";
+                }
+                setWheelPos('shadows', 2, 2, 'Warm Rich Shadow', '#1e1e24');
+                setWheelPos('midtones', 4, -2, 'Natural Skin Warmth', '#f59e0b');
+                setWheelPos('highlights', 5, -5, 'Golden Sun Highlight', '#fbbf24');
+                showToast("Preset Fun & Commercial Vibrant Diterapkan (Film Standard)!");
+            } else if (presetName === 'cinematic') {
+                if (iframe) iframe.src = "https://drive.google.com/file/d/1dz03mMZ4BzdOD9-cLK9q0yE_UbdniTv5/preview";
+                document.getElementById('slider-brightness').value = 98;
+                document.getElementById('slider-contrast').value = 118;
+                document.getElementById('slider-saturate').value = 95;
+                document.getElementById('slider-temp').value = -3;
+                document.getElementById('slider-hue').value = 0;
+                document.getElementById('slider-sepia').value = 0;
+                if (tag) {
+                    tag.innerText = "Hollywood Teal & Orange";
+                    tag.className = "px-2.5 py-0.5 rounded text-[11px] font-semibold bg-teal-500/20 text-teal-300";
+                }
+                setWheelPos('shadows', -12, 10, 'Teal Shadow (#0f2b30)', '#0f2b30');
+                setWheelPos('midtones', 6, -4, 'Warm Amber Skin (#ea580c)', '#ea580c');
+                setWheelPos('highlights', 10, -8, 'Golden Highlight (#f59e0b)', '#f59e0b');
+                showToast("Preset Hollywood Teal & Orange Diterapkan!");
+            } else if (presetName === 'horror') {
+                if (iframe) iframe.src = "https://drive.google.com/file/d/1h4UjDM_2bM45whUxgOGvSWUlz68DhFd8/preview";
+                document.getElementById('slider-brightness').value = 88;
+                document.getElementById('slider-contrast').value = 125;
+                document.getElementById('slider-saturate').value = 75;
+                document.getElementById('slider-temp').value = -12;
+                document.getElementById('slider-hue').value = 0;
+                document.getElementById('slider-sepia').value = 0;
+                if (tag) {
+                    tag.innerText = "Dark Suspense Thriller";
+                    tag.className = "px-2.5 py-0.5 rounded text-[11px] font-semibold bg-rose-500/20 text-rose-300";
+                }
+                setWheelPos('shadows', -14, 12, 'Cold Cyan Slate (#0c2229)', '#0c2229');
+                setWheelPos('midtones', -5, -4, 'Cool Desaturated (#334155)', '#334155');
+                setWheelPos('highlights', -4, -6, 'Pale Slate Highlight (#64748b)', '#64748b');
+                showToast("Preset Dark Suspense Thriller Diterapkan!");
+            }
+
+            updateGrading();
+        }
+
+        // Helper Atur Posisi Wheels
+        function setWheelPos(key, dx, dy, tintLabel, colorHex) {
+            wheelsState[key] = { x: dx, y: dy, tint: tintLabel, color: colorHex };
+            const pointer = document.getElementById(`pointer-${key}`);
+            const label = document.getElementById(`val-${key}-tint`);
+            const swatch = document.getElementById(`label-${key}-color`);
+            const overlay = document.getElementById(`preview-overlay-${key}`);
+
+            if (pointer) {
+                pointer.style.left = `${50 + dx}%`;
+                pointer.style.top = `${50 + dy}%`;
+            }
+            if (label) label.innerText = tintLabel;
+            if (swatch) swatch.style.backgroundColor = (colorHex === 'transparent') ? '#181b24' : colorHex;
+            if (overlay) overlay.style.backgroundColor = (dx === 0 && dy === 0) ? 'transparent' : colorHex;
+        }
+
+        // Reset Semua Slider & Wheels
+        function resetGradingControls() {
+            document.getElementById('slider-brightness').value = 100;
+            document.getElementById('slider-contrast').value = 100;
+            document.getElementById('slider-saturate').value = 100;
+            document.getElementById('slider-temp').value = 0;
+            document.getElementById('slider-hue').value = 0;
+            document.getElementById('slider-sepia').value = 0;
+
+            ['shadows', 'midtones', 'highlights'].forEach(k => setWheelPos(k, 0, 0, 'Netral', 'transparent'));
+            updateGrading();
+            showToast("Semua parameter berhasil direset ke standar netral!");
+        }
+
+        // Handler Dragging Color Wheels
+        function initColorWheels() {
+            ['shadows', 'midtones', 'highlights'].forEach(key => {
+                const bg = document.getElementById(`wheel-${key}-bg`);
+                if (!bg) return;
+
+                const handleMove = (clientX, clientY) => {
+                    const rect = bg.getBoundingClientRect();
+                    const radius = rect.width / 2;
+                    let dx = clientX - (rect.left + radius);
+                    let dy = clientY - (rect.top + radius);
+
+                    let dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist > radius - 6) {
+                        dx = (dx / dist) * (radius - 6);
+                        dy = (dy / dist) * (radius - 6);
+                    }
+
+                    let pxX = (dx / radius) * 40;
+                    let pxY = (dy / radius) * 40;
+
+                    let tintName = 'Custom Tint';
+                    let hexColor = '#6366f1';
+
+                    if (dx < 0 && dy > 0) { tintName = 'Cyan/Teal Shadow'; hexColor = '#0f2b30'; }
+                    else if (dx > 0 && dy < 0) { tintName = 'Warm Amber'; hexColor = '#f97316'; }
+                    else if (dx < 0 && dy < 0) { tintName = 'Cool Slate'; hexColor = '#3b82f6'; }
+                    else if (dx > 0 && dy > 0) { tintName = 'Golden Warmth'; hexColor = '#eab308'; }
+
+                    setWheelPos(key, pxX, pxY, tintName, hexColor);
+                };
+
+                bg.addEventListener('mousedown', (e) => {
+                    activeWheelKey = key;
+                    handleMove(e.clientX, e.clientY);
+                });
+
+                bg.addEventListener('touchstart', (e) => {
+                    activeWheelKey = key;
+                    if (e.touches[0]) handleMove(e.touches[0].clientX, e.touches[0].clientY);
+                }, { passive: true });
+
+                bg.addEventListener('dblclick', () => {
+                    setWheelPos(key, 0, 0, 'Netral', 'transparent');
+                });
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (activeWheelKey) {
+                    const bg = document.getElementById(`wheel-${activeWheelKey}-bg`);
+                    if (bg) {
+                        const rect = bg.getBoundingClientRect();
+                        const radius = rect.width / 2;
+                        let dx = e.clientX - (rect.left + radius);
+                        let dy = e.clientY - (rect.top + radius);
+                        let dist = Math.sqrt(dx * dx + dy * dy);
+                        if (dist > radius - 6) {
+                            dx = (dx / dist) * (radius - 6);
+                            dy = (dy / dist) * (radius - 6);
+                        }
+                        let pxX = (dx / radius) * 40;
+                        let pxY = (dy / radius) * 40;
+                        setWheelPos(activeWheelKey, pxX, pxY, 'Custom', '#6366f1');
+                    }
+                }
+            });
+
+            window.addEventListener('mouseup', () => { activeWheelKey = null; });
+            window.addEventListener('touchend', () => { activeWheelKey = null; });
+        }
+
+        // Salin Nilai Parameter ke Clipboard (Standar Format Lumetri Color Premiere Pro)
+        function copyPremiereSettings() {
+            const expVal = ((document.getElementById('slider-brightness').value - 100) / 100 * 2.0).toFixed(2);
+            const contrastVal = (document.getElementById('slider-contrast').value - 100);
+            const satVal = document.getElementById('slider-saturate').value;
+            const tempVal = document.getElementById('slider-temp').value;
+
+            const text = `=== ADOBE PREMIERE PRO - LUMETRI COLOR VALUES ===
+[BASIC CORRECTION]
+Temperature: ${tempVal > 0 ? '+' : ''}${tempVal}
+Tint: 0.0
+Exposure: ${expVal > 0 ? '+' : ''}${expVal} EV
+Contrast: ${contrastVal > 0 ? '+' : ''}${contrastVal}
+Highlights: -10
+Shadows: +5
+Whites: 0
+Blacks: -5
+Saturation: ${satVal}.0
+
+[COLOR WHEELS 3-WAY]
+Shadows Wheel: ${wheelsState.shadows.tint} (${wheelsState.shadows.color})
+Midtones Wheel: ${wheelsState.midtones.tint} (${wheelsState.midtones.color})
+Highlights Wheel: ${wheelsState.highlights.tint} (${wheelsState.highlights.color})
+=================================================`;
+
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+
+            showToast("Nilai Lumetri standar industri berhasil disalin!");
+        }
+
+        // Tampilkan Notifikasi Toast
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-message');
+            if (toast && toastMsg) {
+                toastMsg.innerText = msg;
+                toast.classList.remove('translate-y-20', 'opacity-0');
+                setTimeout(() => {
+                    toast.classList.add('translate-y-20', 'opacity-0');
+                }, 3000);
+            }
+        }
+
+        // Inisialisasi Saat Halaman Dimuat
+        window.onload = function() {
+            initColorWheels();
+            updateGrading();
+        };
+    </script>
+</body>
+</html>
